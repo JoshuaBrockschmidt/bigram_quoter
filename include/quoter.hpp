@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <iostream>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -15,10 +16,6 @@ private:
 };
 
 class Quoter {
-private:
-	std::vector<std::vector<int>> bigram_array;
-	std::vector<int> bigram_rowSums;
-	std::vector<std::string> bigram_words;
 public:	
 	Quoter();
 	
@@ -26,7 +23,7 @@ public:
 	 *
 	 * @param in Stream of coherent text.
 	 */
-	void feed_stream(const std::istream& in);
+	void feed_stream(std::istream& in);
 		  
 	/* Feeds a file containing coherent text into a quoter for it to mimic.
 	 *
@@ -45,6 +42,20 @@ public:
 	 * @return A single sentence.
 	 */
 	std::string buildSentence();
+
+	/* Prints out a character representation of a quoter's bigram array.
+	 */
+	void emitArray();
+private:
+	const int START_MARKER = 0;
+	const int END_MARKER   = 1;
+
+	std::default_random_engine randGen;
+	std::vector<std::vector<int>> bigram_array;
+	std::vector<int> bigram_rowSums;
+	std::vector<std::string> bigram_words;
+
+	std::string filterWord(std::string& word);
 };
 
 #endif //QUOTER_H
