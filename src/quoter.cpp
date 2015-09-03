@@ -14,11 +14,12 @@ const char* QuoterError::what() const throw() {
 Quoter::Quoter():
 	randGen(),
 	// First two rows/columns of bigram array are START and END markers.
-	bigram_array(2, std::vector<int>(2,0)),
-	bigram_rowSums(2, 0),
+	bigram_array((int)Markers::NUM_ITEMS,
+		     std::vector<int>((int)Markers::NUM_ITEMS,0)),
+	bigram_rowSums((int)Markers::NUM_ITEMS, 0),
 	// START and END markers don't require associated words.
 	// Just give them empty strings.
-	bigram_words(2, std::string()) {
+	bigram_words((int)Markers::NUM_ITEMS, std::string()) {
 	std::random_device rd;
 	randGen.seed(rd());
 }
@@ -27,7 +28,7 @@ void Quoter::feed_stream(std::istream& in) {
 	// Read words in one by one.
 	std::string word;
 	bool sos=true, eos=false;
-	unsigned int lastCol=START_MARKER;
+	unsigned int lastCol=(unsigned int)Markers::START;
 	while (in >> word) {
 		// Check for end of sentence.
 		if (word.find('.') != std::string::npos ||
@@ -43,9 +44,9 @@ void Quoter::feed_stream(std::istream& in) {
 		// Check if filtered word is blank.
 		if (word.empty()) {
 			if (eos) {
-				bigram_array[lastCol][END_MARKER] += 1;
+				bigram_array[lastCol][(unsigned int)Markers::END] += 1;
 				bigram_rowSums[lastCol] += 1;
-				lastCol = START_MARKER;
+				lastCol = (unsigned int)Markers::START;
 				sos = true;
 			}
 			continue;
@@ -80,9 +81,9 @@ void Quoter::feed_stream(std::istream& in) {
 		bigram_array[lastCol][row] += 1;
 		bigram_rowSums[lastCol] += 1;
 		if (eos) {
-			bigram_array[row][END_MARKER] += 1;
+			bigram_array[row][(unsigned int)Markers::END] += 1;
 			bigram_rowSums[row] += 1;
-			lastCol = START_MARKER;
+			lastCol = (unsigned int)Markers::START;
 			eos = false;
 			sos = true;
 		} else {
@@ -115,7 +116,7 @@ void Quoter::feed_string(std::string text) {
 std::string Quoter::buildSentence() {
 	std::string sentence;
 
-	int row = START_MARKER;
+	int row = (unsigned int)Markers::START;
 	unsigned int goal, sum, col;
 	while (true) {
 	        goal=((unsigned int)randGen()%(unsigned int)bigram_rowSums[row])+1;
@@ -125,7 +126,7 @@ std::string Quoter::buildSentence() {
 			sum += bigram_array[row][col];
 		}
 
-		if (col != END_MARKER) {
+		if (col != (unsigned int)Markers::END) {
 			sentence += bigram_words[col];
 			sentence += ' ';
 			row=col;

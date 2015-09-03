@@ -47,8 +47,11 @@ public:
 	 */
 	void emitArray();
 private:
-	const int START_MARKER = 0;
-	const int END_MARKER   = 1;
+	enum struct Markers: unsigned int {
+		START,
+	        END,
+	        NUM_ITEMS
+	};
 
 	std::default_random_engine randGen;
 	std::vector<std::vector<int>> bigram_array;
