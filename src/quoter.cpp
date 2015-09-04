@@ -243,17 +243,8 @@ std::string Quoter::filterWord(std::string& word) {
 	char filtered[word.size()];
         unsigned int i = 0;
 	for (std::string::iterator it=word.begin(); it!=word.end(); it++) {
-		if ((*it >= '#' && *it <='\'') ||
-		    (*it == ',') ||
-		    (*it == '-') ||
-		    (*it >= '0' && *it <= '9') ||
-		    (*it >= '@' && *it <= 'Z') ||
-		    (*it >= 'a' && *it <= 'z') ||
-		    (*it >= 128 && *it <= 167) ||
-		    (*it == 171) ||
-		    (*it == 172) ||
-		    (*it >= 224 && *it <= 239) ||
-		    (*it >= 251 && *it <= 253)) {
+		if (isalnum(*it) || (*it >= '#' && *it <='\'') ||
+		    (*it == ',') || (*it == '-') || (*it == '@')) {
 			filtered[i++] = *it;
 		}
 	}
