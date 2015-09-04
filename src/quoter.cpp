@@ -1,6 +1,11 @@
-//TODO: Seperate filtering from feed_stream.
-//TODO: Add compatibility for []'s, ()'s, "'s and 's that surround text.
-//TODO: Add possibility for multiple types of punctuation.
+/* TODO
+ *  - Seperate filtering from feed_stream.
+ *  - Add compatibility for []'s, ()'s, "'s and 's that surround text.
+ *  - Add possibility for multiple types of punctuation.
+ *  - Parse a stream completely before updating a bigram array.
+ *    This should help deal with sentences with less straight-forward
+ *    symbol placement (like parenthesis and period-ended abbreviations).
+ */
 
 #include <fstream>
 #include <sstream>
@@ -15,7 +20,7 @@ Quoter::Quoter():
 	randGen(),
 	// First two rows/columns of bigram array are START and END markers.
 	bigram_array((int)Markers::NUM_ITEMS,
-		     std::vector<int>((int)Markers::NUM_ITEMS,0)),
+		     std::vector<int>((int)Markers::NUM_ITEMS, 0)),
 	bigram_rowSums((int)Markers::NUM_ITEMS, 0),
 	// START and END markers don't require associated words.
 	// Just give them empty strings.
@@ -28,15 +33,20 @@ void Quoter::feed_stream(std::istream& in) {
 	// Read words in one by one.
 	std::string word;
 	bool sos=true, eos=false;
+	unsigned int eos_marker;
 	unsigned int lastCol=(unsigned int)Markers::START;
 	while (in >> word) {
 		// Check for end of sentence.
-		if (word.find('.') != std::string::npos ||
-		    word.find('!') != std::string::npos ||
-		    word.find('?') != std::string::npos) {
-			if (sos) continue;
-			else eos=true;
-		}
+		eos=true;
+		if (word.find('.') != std::string::npos)
+			eos_marker=(unsigned int)Markers::PERIOD;
+		else if (word.find('!') != std::string::npos)
+			eos_marker=(unsigned int)Markers::EXCLAIM;
+		else if (word.find('?') != std::string::npos)
+			eos_marker=(unsigned int)Markers::QUESTION;
+		else
+			eos=false;
+		if (eos && sos) continue;
 
 		// Filter out unwanted characters.
 		word = filterWord(word);
@@ -44,7 +54,7 @@ void Quoter::feed_stream(std::istream& in) {
 		// Check if filtered word is blank.
 		if (word.empty()) {
 			if (eos) {
-				bigram_array[lastCol][(unsigned int)Markers::END] += 1;
+				bigram_array[lastCol][eos_marker] += 1;
 				bigram_rowSums[lastCol] += 1;
 				lastCol = (unsigned int)Markers::START;
 				sos = true;
@@ -81,7 +91,7 @@ void Quoter::feed_stream(std::istream& in) {
 		bigram_array[lastCol][row] += 1;
 		bigram_rowSums[lastCol] += 1;
 		if (eos) {
-			bigram_array[row][(unsigned int)Markers::END] += 1;
+			bigram_array[row][eos_marker] += 1;
 			bigram_rowSums[row] += 1;
 			lastCol = (unsigned int)Markers::START;
 			eos = false;
@@ -126,14 +136,19 @@ std::string Quoter::buildSentence() {
 			sum += bigram_array[row][col];
 		}
 
-		if (col != (unsigned int)Markers::END) {
+		if (col == (unsigned int)Markers::PERIOD) {
+			sentence.back() = '.';
+			break;
+		} else if (col == (unsigned int)Markers::EXCLAIM) {
+			sentence.back() = '!';
+			break;
+		} else if (col == (unsigned int)Markers::QUESTION) {
+			sentence.back() = '?';
+			break;
+		} else {
 			sentence += bigram_words[col];
 			sentence += ' ';
 			row=col;
-		} else {
-			// Replace trailing space with a period.
-			sentence.back() = '.';
-			break;
 		}
 	}
 

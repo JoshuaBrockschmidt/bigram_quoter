@@ -49,7 +49,9 @@ public:
 private:
 	enum struct Markers: unsigned int {
 		START,
-	        END,
+	        PERIOD,
+	        EXCLAIM,
+		QUESTION,
 	        NUM_ITEMS
 	};
 
