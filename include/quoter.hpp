@@ -16,7 +16,18 @@ private:
 };
 
 class Quoter {
-public:	
+public:
+	// I don't like publicizing this enum. However, it's necessary for
+	// the two-stage parser in Quoter::feed_stream.
+	//TODO: Find privatize this enum without breaking the parser.
+	enum struct Markers: unsigned int {
+		START,
+	        PERIOD,
+	        EXCLAIM,
+		QUESTION,
+	        NUM_ITEMS
+	};
+
 	Quoter();
 	
 	/* Feed a stream of coherent text into quoter for it to mimic.
@@ -47,14 +58,6 @@ public:
 	 */
 	void emitArray();
 private:
-	enum struct Markers: unsigned int {
-		START,
-	        PERIOD,
-	        EXCLAIM,
-		QUESTION,
-	        NUM_ITEMS
-	};
-
 	std::default_random_engine randGen;
 	std::vector<std::vector<int>> bigram_array;
 	std::vector<int> bigram_rowSums;

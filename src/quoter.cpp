@@ -2,14 +2,34 @@
  *  - Seperate filtering from feed_stream.
  *  - Add compatibility for []'s, ()'s, "'s and 's that surround text.
  *  - Add possibility for multiple types of punctuation.
- *  - Parse a stream completely before updating a bigram array.
- *    This should help deal with sentences with less straight-forward
- *    symbol placement (like parenthesis and period-ended abbreviations).
+ *  - Add saving and loading.
  */
 
 #include <fstream>
 #include <sstream>
 #include "quoter.hpp"
+
+enum struct ParserItemTypes: unsigned int {
+	MARKER,
+        WORD
+};
+struct ParserItem {
+        ParserItemTypes type;
+};
+struct ParserItem_marker: ParserItem {
+	Quoter::Markers marker;
+	ParserItem_marker(Quoter::Markers m) {
+		type=ParserItemTypes::MARKER;
+		marker=m;
+	}
+};
+struct ParserItem_word: ParserItem {
+	std::string word;
+	ParserItem_word(std::string w) {
+		type=ParserItemTypes::WORD;
+		word=w;
+	}
+};
 
 QuoterError::QuoterError(std::string m): msg(m) {}
 const char* QuoterError::what() const throw() {
@@ -30,77 +50,130 @@ Quoter::Quoter():
 }
 
 void Quoter::feed_stream(std::istream& in) {
+	// Initialize pre-parser FIFO stack.
+	std::vector<ParserItem*> parserItems;
+
+	/// FIRST PARSING RUN ///
 	// Read words in one by one.
 	std::string word;
 	bool sos=true, eos=false;
-	unsigned int eos_marker;
-	unsigned int lastCol=(unsigned int)Markers::START;
+	Markers eos_marker;
 	while (in >> word) {
 		// Check for end of sentence.
 		eos=true;
 		if (word.find('.') != std::string::npos)
-			eos_marker=(unsigned int)Markers::PERIOD;
+			eos_marker=Markers::PERIOD;
 		else if (word.find('!') != std::string::npos)
-			eos_marker=(unsigned int)Markers::EXCLAIM;
+			eos_marker=Markers::EXCLAIM;
 		else if (word.find('?') != std::string::npos)
-			eos_marker=(unsigned int)Markers::QUESTION;
+			eos_marker=Markers::QUESTION;
 		else
 			eos=false;
-		if (eos && sos) continue;
 
 		// Filter out unwanted characters.
 		word = filterWord(word);
 
-		// Check if filtered word is blank.
-		if (word.empty()) {
-			if (eos) {
-				bigram_array[lastCol][eos_marker] += 1;
-				bigram_rowSums[lastCol] += 1;
-				lastCol = (unsigned int)Markers::START;
-				sos = true;
-			}
-			continue;
+		if (sos) {
+			ParserItem_marker* newStart;
+			newStart=new ParserItem_marker(Markers::START);
+			parserItems.push_back(newStart);
+			sos=false;
 		}
-
-		unsigned int row=0;
-		// Find row/column index of word in bigram array.
-	        for (std::vector<std::string>::iterator it=bigram_words.begin();
-		     it!=bigram_words.end(); ++it) {
-			if (word == *it)
-				break;
-			row++;
+		if (!word.empty()) {
+			ParserItem_word* newWord;
+			newWord=new ParserItem_word(word);
+			parserItems.push_back(newWord);
 		}
-
-		// If word does not yet exist in bigram array, add it.
-		if (row >= bigram_words.size()) {
-			bigram_words.push_back(word);
-
-			// Extend all rows.
-			std::vector<std::vector<int>>::iterator it;
-			for (it=bigram_array.begin();
-			     it!=bigram_array.end(); ++it)
-				(*it).push_back(0);
-
-			// Add rows.
-			std::vector<int> newRow(bigram_words.size(), 0);
-			bigram_array.push_back(newRow);
-			bigram_rowSums.push_back(0);
-		}
-
-		// Update bigram array.
-		bigram_array[lastCol][row] += 1;
-		bigram_rowSums[lastCol] += 1;
-		if (eos) {
-			bigram_array[row][eos_marker] += 1;
-			bigram_rowSums[row] += 1;
-			lastCol = (unsigned int)Markers::START;
-			eos = false;
-			sos = true;
-		} else {
-			lastCol = row;
-			if (sos) sos=false;
+		// Make sure at least one word is in the current sentence
+		// if it is being ended.
+		ParserItem& last=*parserItems.back();
+		if (eos &&
+		    !(last.type==ParserItemTypes::MARKER &&
+		      ((ParserItem_marker&)last).marker==Markers::START)) {
+			ParserItem_marker* newEnd;
+			newEnd=new ParserItem_marker(eos_marker);
+			parserItems.push_back(newEnd);
+			sos=true;
 		}
 	}
+
+	// Mend end of stack if needed.
+        ParserItem& lastParItm=*parserItems.back();
+	if (lastParItm.type==ParserItemTypes::MARKER &&
+	    ((ParserItem_marker&)lastParItm).marker==Markers::START) {
+		parserItems.pop_back();
+	} else if (lastParItm.type==ParserItemTypes::WORD) {
+		ParserItem_marker* newEnd;
+		newEnd=new ParserItem_marker(Markers::PERIOD);
+		parserItems.push_back(newEnd);
+	}
+
+	/// SECOND PARSING RUN ///
+	//TODO: Reduce indentations. Add helper functions and/or restructure.
+	unsigned int lastCol, row;
+	// Initialize lastCol with assumption that
+	// the first parser item is a START marker.
+	lastCol=(unsigned int)Markers::START;
+	// First parser item has been accounted for,
+	// so start iterator on second element.
+	for (std::vector<ParserItem*>::iterator pItm=parserItems.begin()+1;
+	     pItm!=parserItems.end(); ++pItm) {
+		switch ((*pItm)->type) {
+		case ParserItemTypes::MARKER:
+			{
+				ParserItem_marker& mark=
+					*((ParserItem_marker*)(*pItm));
+				row=(unsigned int)mark.marker;
+				break;
+			}
+		case ParserItemTypes::WORD:
+			{
+				ParserItem_word& word=
+					*((ParserItem_word*)(*pItm));
+
+				// Find row index of word in bigram array.
+				row=0;
+				std::vector<std::string>::iterator w;
+				for (w=bigram_words.begin();
+				     w!=bigram_words.end(); ++w) {
+					if (word.word == *w)
+						break;
+					row++;
+				}
+				// If word does not yet exist in bigram array,
+				// add it.
+				if (row >= bigram_words.size()) {
+					bigram_words.push_back(word.word);
+
+					// Extend all rows.
+					std::vector<std::vector<int>>::iterator r;
+					for (r=bigram_array.begin();
+					     r!=bigram_array.end(); ++r)
+						r->push_back(0);
+
+					// Add rows.
+					std::vector<int> newRow(bigram_words.size(), 0);
+					bigram_array.push_back(newRow);
+					bigram_rowSums.push_back(0);
+				}
+				break;
+			}
+		default:
+			std::cerr << "Quoter::feed_stream: "
+				  << "Unexpected error in second parsing run."
+				  << std::endl;
+		}
+
+		bigram_array[lastCol][row]++;
+		bigram_rowSums[lastCol]++;
+
+		lastCol=row;
+	}
+
+	//Delete parser items.
+	for (std::vector<ParserItem*>::iterator pItm=parserItems.begin();
+	     pItm!=parserItems.end(); ++pItm)
+		delete *pItm;
 }
 
 void Quoter::feed_file(std::string filePath) {
