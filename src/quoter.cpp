@@ -10,6 +10,13 @@
 #include <sstream>
 #include "quoter.hpp"
 
+enum struct Markers: unsigned int {
+	START,
+	PERIOD,
+	EXCLAIM,
+	QUESTION,
+	NUM_ITEMS
+};
 enum struct ParserItemTypes: unsigned int {
 	MARKER,
         WORD
@@ -18,8 +25,8 @@ struct ParserItem {
         ParserItemTypes type;
 };
 struct ParserItem_marker: ParserItem {
-	Quoter::Markers marker;
-	ParserItem_marker(Quoter::Markers m) {
+	Markers marker;
+	ParserItem_marker(Markers m) {
 		type=ParserItemTypes::MARKER;
 		marker=m;
 	}

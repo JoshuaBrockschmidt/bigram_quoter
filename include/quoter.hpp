@@ -17,17 +17,6 @@ private:
 
 class Quoter {
 public:
-	// I don't like publicizing this enum. However, it's necessary for
-	// the two-stage parser in Quoter::feed_stream.
-	//TODO: Find privatize this enum without breaking the parser.
-	enum struct Markers: unsigned int {
-		START,
-	        PERIOD,
-	        EXCLAIM,
-		QUESTION,
-	        NUM_ITEMS
-	};
-
 	Quoter();
 
 	/* Feed a stream of coherent text into quoter for it to mimic.
