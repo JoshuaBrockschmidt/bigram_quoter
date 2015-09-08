@@ -203,7 +203,7 @@ std::string Quoter::buildSentence() {
 	unsigned int row = (unsigned int)Markers::START;
 	unsigned int goal, sum, col;
 	while (true) {
-	        goal=((unsigned int)randGen()%(unsigned int)bigram_rowSums[row])+1;
+	        goal=(randGen() % bigram_rowSums[row]) + 1;
 		sum=0, col=row;
 		while (sum<goal) {
 			col=(col+1)%bigram_array.size();
