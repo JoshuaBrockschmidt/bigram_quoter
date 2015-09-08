@@ -29,13 +29,13 @@ public:
 	};
 
 	Quoter();
-	
+
 	/* Feed a stream of coherent text into quoter for it to mimic.
 	 *
 	 * @param in Stream of coherent text.
 	 */
 	void feed_stream(std::istream& in);
-		  
+
 	/* Feeds a file containing coherent text into a quoter for it to mimic.
 	 *
 	 * @param filePath Path to file containing coherent text.
