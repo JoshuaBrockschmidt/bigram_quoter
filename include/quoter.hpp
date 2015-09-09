@@ -1,4 +1,4 @@
-#ifndef QUOTER_H
+x#ifndef QUOTER_H
 #define QUOTER_H
 
 #include <exception>
@@ -44,7 +44,7 @@ public:
 
 	/* Feed a string of coherent text into a quoter for it to mimic.
 	 *
-	 * @in String of coherent text.
+	 * @param text String of coherent text.
 	 */
 	void feed_string(std::string text);
 
