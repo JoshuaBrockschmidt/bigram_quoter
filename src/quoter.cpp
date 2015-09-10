@@ -212,7 +212,7 @@ std::string Quoter::buildSentence() {
 	        goal=(randGen() % bigram_rowSums[row]) + 1;
 		sum=0, col=row;
 		while (sum<goal) {
-			col = (col % bigram_array.size()) + 1;
+			col=(col+1)%bigram_array.size();
 			sum += bigram_array[row][col];
 		}
 
