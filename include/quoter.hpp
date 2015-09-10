@@ -61,6 +61,8 @@ public:
 	 */
 	void emitArray();
 private:
+	const std::int16_t SAVEFORMAT_MAJOR=1;
+	const std::int16_t SAVEFORMAT_MINOR=0;
 	std::default_random_engine randGen;
 	std::vector<std::vector<std::uint32_t>> bigram_array;
 	std::vector<std::uint32_t> bigram_rowSums;

@@ -243,6 +243,10 @@ void Quoter::writeData(std::string filename) {
 		throw QuoterError(m);
 	}
 
+	// Write major and minor version.
+	out.write((const char*)&SAVEFORMAT_MAJOR, sizeof(std::uint16_t));
+	out.write((const char*)&SAVEFORMAT_MINOR, sizeof(std::uint16_t));
+
 	// Write word count.
 	std::uint64_t wordCnt=bigram_array.size();
 	out.write((const char*)&wordCnt, sizeof(std::uint64_t));
@@ -283,6 +287,23 @@ void Quoter::readData(std::string filename) {
 
 	try {
 		in.exceptions(std::ifstream::eofbit);
+
+		// Get major and minor version number.
+		std::uint16_t major, minor;
+		in.read((char*)&major, sizeof(std::uint16_t));
+		in.read((char*)&minor, sizeof(std::uint16_t));
+		if (major!=SAVEFORMAT_MAJOR || minor!=SAVEFORMAT_MINOR) {
+			std::string m="Error in Quoter::readData: "
+				"File format version is ";
+			m+=std::to_string(major);
+			m+=".";
+			m+=std::to_string(minor);
+			m+="; it should be ";
+			m+=std::to_string(SAVEFORMAT_MAJOR);
+			m+=".";
+			m+=std::to_string(SAVEFORMAT_MINOR);
+			throw QuoterError(m);
+		}
 
 		// Get word count.
 		in.read((char*)&wordCnt, sizeof(std::uint64_t));
