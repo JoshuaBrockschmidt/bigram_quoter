@@ -1,4 +1,4 @@
-x#ifndef QUOTER_H
+#ifndef QUOTER_H
 #define QUOTER_H
 
 #include <exception>
@@ -53,6 +53,19 @@ public:
 	 * @return A single sentence.
 	 */
 	std::string buildSentence();
+
+	/* Writes quoter data to a file.
+	 *
+	 * @param filename Name of file to write to.
+	 */
+	void writeData(std::string filename);
+
+	/* Read quoter data from file. This will overwrite data
+	 * in a quoter if successful.
+	 *
+	 * @param filename Name of file to read from.
+	 */
+	void readData(std::string filename);
 
 	/* Prints out a character representation of a quoter's bigram array.
 	 */

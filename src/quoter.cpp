@@ -5,6 +5,7 @@
  *  - Add saving and loading.
  */
 
+#include <cstdint>
 #include <fstream>
 #include <sstream>
 #include "quoter.hpp"
@@ -121,14 +122,14 @@ void Quoter::feed_stream(std::istream& in) {
 		switch ((*pItm)->type) {
 		case ParserItemTypes::MARKER:
 			{
-				ParserItem_marker& mark=
+				ParserItem_marker& mark_pi=
 					*((ParserItem_marker*)(*pItm));
-				row=(unsigned int)mark.marker;
+				row=(unsigned int)mark_pi.marker;
 				break;
 			}
 		case ParserItemTypes::WORD:
 			{
-				ParserItem_word& word=
+				ParserItem_word& word_pi=
 					*((ParserItem_word*)(*pItm));
 
 				// Find row index of word in bigram array.
@@ -136,14 +137,14 @@ void Quoter::feed_stream(std::istream& in) {
 				std::vector<std::string>::iterator w;
 				for (w=bigram_words.begin();
 				     w!=bigram_words.end(); ++w) {
-					if (word.word == *w)
+					if (word_pi.word == *w)
 						break;
 					row++;
 				}
 				// If word does not yet exist in bigram array,
 				// add it.
 				if (row >= bigram_words.size()) {
-					bigram_words.push_back(word.word);
+					bigram_words.push_back(word_pi.word);
 
 					// Extend all rows.
 					std::vector<std::vector<int>>::iterator r;
@@ -159,7 +160,7 @@ void Quoter::feed_stream(std::istream& in) {
 				break;
 			}
 		default:
-			std::cerr << "Quoter::feed_stream: "
+			std::cerr << "Error in Quoter::feed_stream: "
 				  << "Unexpected error in second parsing run."
 				  << std::endl;
 		}
@@ -180,7 +181,7 @@ void Quoter::feed_file(std::string filePath) {
 	std::ifstream ifs(filePath.c_str());
 
 	if (!ifs.is_open()) {
-		std::string m = "Quoter::feed: Could not open ";
+		std::string m = "Error in Quoter::feed: Could not open ";
 		m += filePath;
 		throw QuoterError(m);
 	}
@@ -199,13 +200,13 @@ void Quoter::feed_string(std::string text) {
 std::string Quoter::buildSentence() {
 	std::string sentence;
 
-	int row = (unsigned int)Markers::START;
+	unsigned int row = (unsigned int)Markers::START;
 	unsigned int goal, sum, col;
 	while (true) {
 	        goal=((unsigned int)randGen()%(unsigned int)bigram_rowSums[row])+1;
 		sum=0, col=row;
 		while (sum<goal) {
-			col = ++col%bigram_array.size();
+			col=(col+1)%bigram_array.size();
 			sum += bigram_array[row][col];
 		}
 
@@ -226,6 +227,105 @@ std::string Quoter::buildSentence() {
 	}
 
 	return sentence;
+}
+
+void Quoter::writeData(std::string filename) {
+	std::ofstream out(filename, std::ios::binary);
+	if (!out.is_open()) {
+		std::string m="Error in Quoter::writeData: Cannot open file '";
+		m+=filename;
+		m+="' for writing";
+		throw QuoterError(m);
+	}
+
+	// Write word count.
+	std::uint64_t wordCnt=bigram_array.size();
+	out.write((const char*)&wordCnt, sizeof(std::uint64_t));
+
+	// Write words.
+	std::vector<std::string>::iterator word_it;
+	for (word_it=bigram_words.begin();
+	     word_it!=bigram_words.end(); ++word_it) {
+		out.write(word_it->c_str(), (word_it->size()+1)*sizeof(char));
+	}
+
+	// Write array data.
+	std::int32_t i;
+	std::vector<std::vector<int>>::iterator row_it;
+	std::vector<int>::iterator col_it;
+	for (row_it=bigram_array.begin();
+	     row_it!=bigram_array.end(); ++row_it) {
+		for (col_it=row_it->begin();
+		     col_it!=row_it->end(); ++col_it) {
+			i=(std::int32_t)(*col_it);
+			out.write((char*)&i, sizeof(std::int32_t));
+		}
+	}
+}
+
+void Quoter::readData(std::string filename) {
+	std::ifstream in(filename, std::ios::binary);
+	if (!in.is_open()) {
+		std::string m="Error in Quoter::readData: Cannot open file '";
+		m+=filename;
+		m+="' for reading";
+		throw QuoterError(m);
+	}
+
+	std::uint64_t wordCnt;
+	std::vector<std::vector<int>> newArray;
+	std::vector<std::string> newWords;
+
+	try {
+		in.exceptions(std::ifstream::eofbit);
+
+		// Get word count.
+		in.read((char*)&wordCnt, sizeof(std::uint64_t));
+
+		// Get words.
+		std::streampos wordBgn=in.tellg();
+		char c;
+		std::uint64_t w;
+		unsigned int sLen;
+		for (w=0; w<wordCnt; w++) {
+			sLen=0;
+			do {
+				in.read(&c, sizeof(char));
+				sLen++;
+			} while (c!='\0');
+			in.seekg(wordBgn);
+			char buf[sLen];
+			in.read(buf, sLen*sizeof(char));
+			newWords.push_back(std::string(buf));
+			wordBgn=in.tellg();
+		}
+
+		// Get array data.
+		std::uint64_t col;
+	        int v;
+		for (w=0; w<wordCnt; w++) {
+			newArray.push_back(std::vector<int>());
+			for (col=0; col<wordCnt; col++) {
+				in.read((char*)&v, sizeof(int));
+				newArray[w].push_back(v);
+			}
+		}
+	} catch(std::ifstream::failure& e) {
+		std::string m="Error in Quoter::readData: ";
+		m+="Save file '";
+		m+=filename;
+		m+="' is corrupt";
+		throw QuoterError(m);
+	}
+
+	bigram_words=newWords;
+	bigram_array=newArray;
+	bigram_rowSums=std::vector<int>(wordCnt, 0);
+	std::uint64_t row, col;
+	for (row=0;row<wordCnt;row++) {
+		for (col=0;col<wordCnt;col++)
+			bigram_rowSums[row]+=bigram_array[row][col];
+	}
 }
 
 void Quoter::emitArray() {
