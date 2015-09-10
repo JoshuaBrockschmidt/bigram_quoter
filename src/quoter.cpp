@@ -5,12 +5,11 @@
  *  - Add saving and loading.
  */
 
-#include <cstdint>
 #include <fstream>
 #include <sstream>
 #include "quoter.hpp"
 
-enum struct ParserItemTypes: unsigned int {
+enum struct ParserItemTypes: std::uint32_t {
 	MARKER,
         WORD
 };
@@ -41,7 +40,7 @@ Quoter::Quoter():
 	randGen(),
 	// First two rows/columns of bigram array are START and END markers.
 	bigram_array((int)Markers::NUM_ITEMS,
-		     std::vector<int>((int)Markers::NUM_ITEMS, 0)),
+		     std::vector<std::uint32_t>((int)Markers::NUM_ITEMS, 0)),
 	bigram_rowSums((int)Markers::NUM_ITEMS, 0),
 	// START and END markers don't require associated words.
 	// Just give them empty strings.
@@ -111,10 +110,10 @@ void Quoter::feed_stream(std::istream& in) {
 
 	/// SECOND PARSING RUN ///
 	//TODO: Reduce indentations. Add helper functions and/or restructure.
-	unsigned int lastCol, row;
+        std::uint32_t lastCol, row;
 	// Initialize lastCol with assumption that
 	// the first parser item is a START marker.
-	lastCol=(unsigned int)Markers::START;
+	lastCol=(std::uint32_t)Markers::START;
 	// First parser item has been accounted for,
 	// so start iterator on second element.
 	for (std::vector<ParserItem*>::iterator pItm=parserItems.begin()+1;
@@ -124,7 +123,7 @@ void Quoter::feed_stream(std::istream& in) {
 			{
 				ParserItem_marker& mark_pi=
 					*((ParserItem_marker*)(*pItm));
-				row=(unsigned int)mark_pi.marker;
+				row=(std::uint32_t)mark_pi.marker;
 				break;
 			}
 		case ParserItemTypes::WORD:
@@ -147,13 +146,13 @@ void Quoter::feed_stream(std::istream& in) {
 					bigram_words.push_back(word_pi.word);
 
 					// Extend all rows.
-					std::vector<std::vector<int>>::iterator r;
+					std::vector<std::vector<std::uint32_t>>::iterator r;
 					for (r=bigram_array.begin();
 					     r!=bigram_array.end(); ++r)
 						r->push_back(0);
 
 					// Add rows.
-					std::vector<int> newRow(bigram_words.size(), 0);
+					std::vector<std::uint32_t> newRow(bigram_words.size(), 0);
 					bigram_array.push_back(newRow);
 					bigram_rowSums.push_back(0);
 				}
@@ -200,23 +199,23 @@ void Quoter::feed_string(std::string text) {
 std::string Quoter::buildSentence() {
 	std::string sentence;
 
-	unsigned int row = (unsigned int)Markers::START;
-	unsigned int goal, sum, col;
+        std::uint32_t row = (unsigned int)Markers::START;
+	std::uint32_t goal, sum, col;
 	while (true) {
-	        goal=((unsigned int)randGen()%(unsigned int)bigram_rowSums[row])+1;
+	        goal=((std::uint32_t)randGen()%(std::uint32_t)bigram_rowSums[row])+1;
 		sum=0, col=row;
 		while (sum<goal) {
 			col=(col+1)%bigram_array.size();
 			sum += bigram_array[row][col];
 		}
 
-		if (col == (unsigned int)Markers::PERIOD) {
+		if (col == (std::uint32_t)Markers::PERIOD) {
 			sentence.back() = '.';
 			break;
-		} else if (col == (unsigned int)Markers::EXCLAIM) {
+		} else if (col == (std::uint32_t)Markers::EXCLAIM) {
 			sentence.back() = '!';
 			break;
-		} else if (col == (unsigned int)Markers::QUESTION) {
+		} else if (col == (std::uint32_t)Markers::QUESTION) {
 			sentence.back() = '?';
 			break;
 		} else {
@@ -250,15 +249,15 @@ void Quoter::writeData(std::string filename) {
 	}
 
 	// Write array data.
-	std::int32_t i;
-	std::vector<std::vector<int>>::iterator row_it;
-	std::vector<int>::iterator col_it;
+	std::uint32_t i;
+	std::vector<std::vector<std::uint32_t>>::iterator row_it;
+	std::vector<std::uint32_t>::iterator col_it;
 	for (row_it=bigram_array.begin();
 	     row_it!=bigram_array.end(); ++row_it) {
 		for (col_it=row_it->begin();
 		     col_it!=row_it->end(); ++col_it) {
-			i=(std::int32_t)(*col_it);
-			out.write((char*)&i, sizeof(std::int32_t));
+			i=(std::uint32_t)(*col_it);
+			out.write((char*)&i, sizeof(std::uint32_t));
 		}
 	}
 }
@@ -273,7 +272,7 @@ void Quoter::readData(std::string filename) {
 	}
 
 	std::uint64_t wordCnt;
-	std::vector<std::vector<int>> newArray;
+	std::vector<std::vector<std::uint32_t>> newArray;
 	std::vector<std::string> newWords;
 
 	try {
@@ -302,11 +301,11 @@ void Quoter::readData(std::string filename) {
 
 		// Get array data.
 		std::uint64_t col;
-	        int v;
+	        std::uint32_t v;
 		for (w=0; w<wordCnt; w++) {
-			newArray.push_back(std::vector<int>());
+			newArray.push_back(std::vector<std::uint32_t>());
 			for (col=0; col<wordCnt; col++) {
-				in.read((char*)&v, sizeof(int));
+				in.read((char*)&v, sizeof(std::uint32_t));
 				newArray[w].push_back(v);
 			}
 		}
@@ -320,7 +319,7 @@ void Quoter::readData(std::string filename) {
 
 	bigram_words=newWords;
 	bigram_array=newArray;
-	bigram_rowSums=std::vector<int>(wordCnt, 0);
+	bigram_rowSums=std::vector<std::uint32_t>(wordCnt, 0);
 	std::uint64_t row, col;
 	for (row=0;row<wordCnt;row++) {
 		for (col=0;col<wordCnt;col++)
@@ -329,8 +328,8 @@ void Quoter::readData(std::string filename) {
 }
 
 void Quoter::emitArray() {
-	std::vector<std::vector<int>>::iterator row;
-	std::vector<int>::iterator col;
+	std::vector<std::vector<std::uint32_t>>::iterator row;
+	std::vector<std::uint32_t>::iterator col;
 	for (row=bigram_array.begin(); row!=bigram_array.end(); ++row) {
 		for (col=row->begin(); col!=row->end(); ++col) {
 			std::cout << *col << ' ';

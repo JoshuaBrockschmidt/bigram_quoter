@@ -1,6 +1,7 @@
 #ifndef QUOTER_H
 #define QUOTER_H
 
+#include <cstdint>
 #include <exception>
 #include <iostream>
 #include <random>
@@ -20,7 +21,7 @@ public:
 	// I don't like publicizing this enum. However, it's necessary for
 	// the two-stage parser in Quoter::feed_stream.
 	//TODO: Find privatize this enum without breaking the parser.
-	enum struct Markers: unsigned int {
+	enum struct Markers: std::uint32_t {
 		START,
 	        PERIOD,
 	        EXCLAIM,
@@ -72,8 +73,8 @@ public:
 	void emitArray();
 private:
 	std::default_random_engine randGen;
-	std::vector<std::vector<int>> bigram_array;
-	std::vector<int> bigram_rowSums;
+	std::vector<std::vector<std::uint32_t>> bigram_array;
+	std::vector<std::uint32_t> bigram_rowSums;
 	std::vector<std::string> bigram_words;
 
 	std::string filterWord(std::string& word);
