@@ -279,22 +279,18 @@ void Quoter::readData(std::string filename) {
 
 	try {
 		std::string buf;
-		std::uint16_t major, minor;
+		Quoter::save_format_version version;
 		int state=0;
-		size_t pos = 0;
 		while (std::getline(in, buf)) {
 			switch(state) {
 			case 0:
-				// Get major version number.
-				major=std::stoi(buf, &pos);
-				// Get minor version number.
-				minor=std::stoi(buf.substr(pos + 1));
-				if (major!=save_format.major || minor!=save_format.minor) {
+				version = readVersion(buf);
+				if (version.major!=save_format.major || version.minor!=save_format.minor) {
 					std::string m="Error in Quoter::readData: "
 						"File format version is ";
-					m+=std::to_string(major);
+					m+=std::to_string(version.major);
 					m+=".";
-					m+=std::to_string(minor);
+					m+=std::to_string(version.minor);
 					m+="; it should be ";
 					m+=std::to_string(save_format.major);
 					m+=".";
@@ -376,6 +372,20 @@ void Quoter::emitArray() {
 		}
 		std::cout << std::endl;
 	}
+}
+
+Quoter::save_format_version Quoter::readVersion(std::string buf) {
+	size_t substr_pos = 0;
+	std::int16_t maj, min;
+
+	maj = std::stoi(buf, &substr_pos);
+	/* substr_pos starts at separating space, so skip it */
+	min = std::stoi(buf.substr(substr_pos + 1));
+
+	return Quoter::save_format_version {
+		.major = maj,
+		.minor = min,
+	};
 }
 
 std::string Quoter::filterWord(std::string& word) {

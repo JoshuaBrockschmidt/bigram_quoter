@@ -76,6 +76,7 @@ private:
 	std::vector<std::uint32_t> bigram_rowSums;
 	std::vector<std::string> bigram_words;
 
+	struct save_format_version readVersion(std::string buf);
 	std::string filterWord(std::string& word);
 };
 
