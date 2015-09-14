@@ -242,8 +242,8 @@ void Quoter::writeData(std::string filename) {
 	}
 
 	// Write major and minor version.
-	out << SAVEFORMAT_MAJOR << '\n';
-	out << SAVEFORMAT_MINOR << '\n';
+	out << save_format.major << '\n';
+	out << save_format.minor << '\n';
 
 	// Write word count.
 	std::uint64_t wordCnt=bigram_array.size();
@@ -292,16 +292,16 @@ void Quoter::readData(std::string filename) {
 			case 1:
 				// Get minor version number.
 				minor=std::stoi(buf);
-				if (major!=SAVEFORMAT_MAJOR || minor!=SAVEFORMAT_MINOR) {
+				if (major!=save_format.major || minor!=save_format.minor) {
 					std::string m="Error in Quoter::readData: "
 						"File format version is ";
 					m+=std::to_string(major);
 					m+=".";
 					m+=std::to_string(minor);
 					m+="; it should be ";
-					m+=std::to_string(SAVEFORMAT_MAJOR);
+					m+=std::to_string(save_format.major);
 					m+=".";
-					m+=std::to_string(SAVEFORMAT_MINOR);
+					m+=std::to_string(save_format.minor);
 					throw QuoterError(m);
 				}
 				state++;

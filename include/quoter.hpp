@@ -61,8 +61,16 @@ public:
 	 */
 	void emitArray();
 private:
-	const std::int16_t SAVEFORMAT_MAJOR=2;
-	const std::int16_t SAVEFORMAT_MINOR=0;
+	struct save_format_version {
+		std::int16_t major;
+		std::int16_t minor;
+	};
+
+	const struct save_format_version save_format = {
+		.major = 2,
+		.minor = 0,
+	};
+
 	std::default_random_engine randGen;
 	std::vector<std::vector<std::uint32_t>> bigram_array;
 	std::vector<std::uint32_t> bigram_rowSums;
