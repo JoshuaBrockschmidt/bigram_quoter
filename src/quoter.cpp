@@ -279,24 +279,11 @@ void Quoter::readData(std::string filename) {
 
 	try {
 		std::string buf;
-		Quoter::save_format_version version;
 		int state=0;
 		while (std::getline(in, buf)) {
 			switch(state) {
 			case 0:
-				version = readVersion(buf);
-				if (version.major!=save_format.major || version.minor!=save_format.minor) {
-					std::string m="Error in Quoter::readData: "
-						"File format version is ";
-					m+=std::to_string(version.major);
-					m+=".";
-					m+=std::to_string(version.minor);
-					m+="; it should be ";
-					m+=std::to_string(save_format.major);
-					m+=".";
-					m+=std::to_string(save_format.minor);
-					throw QuoterError(m);
-				}
+				checkVersion(readVersion(buf));
 				state++;
 				break;
 			case 1:
@@ -371,6 +358,21 @@ void Quoter::emitArray() {
 			std::cout << *col << ' ';
 		}
 		std::cout << std::endl;
+	}
+}
+
+void Quoter::checkVersion(Quoter::save_format_version v) {
+	if (v.major != save_format.major || v.minor != save_format.minor) {
+		std::string m="Error in Quoter::readData: "
+			"File format version is ";
+		m+=std::to_string(v.major);
+		m+=".";
+		m+=std::to_string(v.minor);
+		m+="; it should be ";
+		m+=std::to_string(save_format.major);
+		m+=".";
+		m+=std::to_string(save_format.minor);
+		throw QuoterError(m);
 	}
 }
 
