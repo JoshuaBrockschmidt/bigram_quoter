@@ -242,18 +242,18 @@ void Quoter::writeData(std::string filename) {
 	}
 
 	// Write major and minor version.
-	out << SAVEFORMAT_MAJOR;
-	out << '\n' << SAVEFORMAT_MINOR;
+	out << SAVEFORMAT_MAJOR << '\n';
+	out << SAVEFORMAT_MINOR << '\n';
 
 	// Write word count.
 	std::uint64_t wordCnt=bigram_array.size();
-	out << '\n' << wordCnt;
+	out << wordCnt << '\n';
 
 	// Write words.
 	std::vector<std::string>::iterator word_it;
 	for (word_it=bigram_words.begin();
 	     word_it!=bigram_words.end(); ++word_it)
-		out << '\n' << *word_it;
+		out << *word_it << '\n';
 
 	// Write array data.
 	std::vector<std::vector<std::uint32_t>>::iterator row_it;
@@ -262,7 +262,7 @@ void Quoter::writeData(std::string filename) {
 	     row_it!=bigram_array.end(); ++row_it)
 		for (col_it=row_it->begin();
 		     col_it!=row_it->end(); ++col_it)
-			out << '\n' << *col_it;
+			out << *col_it << '\n';
 }
 
 void Quoter::readData(std::string filename) {
