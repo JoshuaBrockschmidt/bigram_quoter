@@ -242,8 +242,7 @@ void Quoter::writeData(std::string filename) {
 	}
 
 	// Write major and minor version.
-	out << save_format.major << '\n';
-	out << save_format.minor << '\n';
+	out << save_format.major << ' ' << save_format.minor << '\n';
 
 	// Write word count.
 	std::uint64_t wordCnt=bigram_array.size();
@@ -282,16 +281,14 @@ void Quoter::readData(std::string filename) {
 		std::string buf;
 		std::uint16_t major, minor;
 		int state=0;
+		size_t pos = 0;
 		while (std::getline(in, buf)) {
 			switch(state) {
 			case 0:
 				// Get major version number.
-				major=std::stoi(buf);
-				state++;
-				break;
-			case 1:
+				major=std::stoi(buf, &pos);
 				// Get minor version number.
-				minor=std::stoi(buf);
+				minor=std::stoi(buf.substr(pos + 1));
 				if (major!=save_format.major || minor!=save_format.minor) {
 					std::string m="Error in Quoter::readData: "
 						"File format version is ";
@@ -306,13 +303,13 @@ void Quoter::readData(std::string filename) {
 				}
 				state++;
 				break;
-			case 2:
+			case 1:
 				// Get word count.
 				wordCnt=std::stoi(buf);
 				state++;
 				row=1;
 				break;
-			case 3:
+			case 2:
 				// Get words.
 				newWords.push_back(buf);
 				if (row++==wordCnt) {
@@ -320,7 +317,7 @@ void Quoter::readData(std::string filename) {
 					state++;
 				}
 				break;
-			case 4:
+			case 3:
 				// Get array data.
 				if (col==0)
 					newArray.push_back(std::vector<std::uint32_t>());
@@ -343,7 +340,7 @@ void Quoter::readData(std::string filename) {
 			}
 		}
 
-		if (state<=4) {
+		if (state<=3) {
 			// Too few lines.
 			std::string m="Error in Quoter::readData: ";
 			m+="Save file '";
