@@ -314,12 +314,9 @@ void Quoter::readData(std::string filename) {
 				}
 				break;
 			default:
-				// Too many lines.
-				std::string m="Error in Quoter::readData: ";
-				m+="Save file '";
-				m+=filename;
-				m+="' is corrupt: Too many lines";
-				throw QuoterError(m);
+				// Too many lines, but that's okay.
+				// Let's just ignore it like it didn't happen.
+				break;
 			}
 		}
 
