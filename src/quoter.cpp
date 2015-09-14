@@ -1,5 +1,5 @@
 /* TODO
- *  - Seperate filtering from feed_stream.
+ *  - Seperate filtering from feed_stream.o
  *  - Add compatibility for []'s, ()'s, "'s and 's that surround text.
  *  - Add possibility for multiple types of punctuation.
  *  - Add saving and loading.
@@ -235,7 +235,7 @@ std::string Quoter::buildSentence() {
 }
 
 void Quoter::writeData(std::string filename) {
-	std::ofstream out(filename, std::ios::binary);
+	std::ofstream out(filename);
 	if (!out.is_open()) {
 		std::string m="Error in Quoter::writeData: Cannot open file '";
 		m+=filename;
@@ -244,36 +244,31 @@ void Quoter::writeData(std::string filename) {
 	}
 
 	// Write major and minor version.
-	out.write((const char*)&SAVEFORMAT_MAJOR, sizeof(std::uint16_t));
-	out.write((const char*)&SAVEFORMAT_MINOR, sizeof(std::uint16_t));
+	out << SAVEFORMAT_MAJOR;
+	out << '\n' << SAVEFORMAT_MINOR;
 
 	// Write word count.
 	std::uint64_t wordCnt=bigram_array.size();
-	out.write((const char*)&wordCnt, sizeof(std::uint64_t));
+	out << '\n' << wordCnt;
 
 	// Write words.
 	std::vector<std::string>::iterator word_it;
 	for (word_it=bigram_words.begin();
-	     word_it!=bigram_words.end(); ++word_it) {
-		out.write(word_it->c_str(), (word_it->size()+1)*sizeof(char));
-	}
+	     word_it!=bigram_words.end(); ++word_it)
+		out << '\n' << *word_it;
 
 	// Write array data.
-	std::uint32_t i;
 	std::vector<std::vector<std::uint32_t>>::iterator row_it;
 	std::vector<std::uint32_t>::iterator col_it;
 	for (row_it=bigram_array.begin();
-	     row_it!=bigram_array.end(); ++row_it) {
+	     row_it!=bigram_array.end(); ++row_it)
 		for (col_it=row_it->begin();
-		     col_it!=row_it->end(); ++col_it) {
-			i=(std::uint32_t)(*col_it);
-			out.write((char*)&i, sizeof(std::uint32_t));
-		}
-	}
+		     col_it!=row_it->end(); ++col_it)
+			out << '\n' << *col_it;
 }
 
 void Quoter::readData(std::string filename) {
-	std::ifstream in(filename, std::ios::binary);
+	std::ifstream in(filename);
 	if (!in.is_open()) {
 		std::string m="Error in Quoter::readData: Cannot open file '";
 		m+=filename;
@@ -281,73 +276,96 @@ void Quoter::readData(std::string filename) {
 		throw QuoterError(m);
 	}
 
-	std::uint64_t wordCnt;
+	std::uint64_t wordCnt, row, col;
 	std::vector<std::vector<std::uint32_t>> newArray;
 	std::vector<std::string> newWords;
 
 	try {
-		in.exceptions(std::ifstream::eofbit);
-
-		// Get major and minor version number.
+		std::string buf;
 		std::uint16_t major, minor;
-		in.read((char*)&major, sizeof(std::uint16_t));
-		in.read((char*)&minor, sizeof(std::uint16_t));
-		if (major!=SAVEFORMAT_MAJOR || minor!=SAVEFORMAT_MINOR) {
-			std::string m="Error in Quoter::readData: "
-				"File format version is ";
-			m+=std::to_string(major);
-			m+=".";
-			m+=std::to_string(minor);
-			m+="; it should be ";
-			m+=std::to_string(SAVEFORMAT_MAJOR);
-			m+=".";
-			m+=std::to_string(SAVEFORMAT_MINOR);
-			throw QuoterError(m);
-		}
-
-		// Get word count.
-		in.read((char*)&wordCnt, sizeof(std::uint64_t));
-
-		// Get words.
-		std::streampos wordBgn=in.tellg();
-		char c;
-		std::uint64_t w;
-		unsigned int sLen;
-		for (w=0; w<wordCnt; w++) {
-			sLen=0;
-			do {
-				in.read(&c, sizeof(char));
-				sLen++;
-			} while (c!='\0');
-			in.seekg(wordBgn);
-			char buf[sLen];
-			in.read(buf, sLen*sizeof(char));
-			newWords.push_back(std::string(buf));
-			wordBgn=in.tellg();
-		}
-
-		// Get array data.
-		std::uint64_t col;
-	        std::uint32_t v;
-		for (w=0; w<wordCnt; w++) {
-			newArray.push_back(std::vector<std::uint32_t>());
-			for (col=0; col<wordCnt; col++) {
-				in.read((char*)&v, sizeof(std::uint32_t));
-				newArray[w].push_back(v);
+		int state=0;
+		while (std::getline(in, buf)) {
+			switch(state) {
+			case 0:
+				// Get major version number.
+				major=std::stoi(buf);
+				state++;
+				break;
+			case 1:
+				// Get minor version number.
+				minor=std::stoi(buf);
+				if (major!=SAVEFORMAT_MAJOR || minor!=SAVEFORMAT_MINOR) {
+					std::string m="Error in Quoter::readData: "
+						"File format version is ";
+					m+=std::to_string(major);
+					m+=".";
+					m+=std::to_string(minor);
+					m+="; it should be ";
+					m+=std::to_string(SAVEFORMAT_MAJOR);
+					m+=".";
+					m+=std::to_string(SAVEFORMAT_MINOR);
+					throw QuoterError(m);
+				}
+				state++;
+				break;
+			case 2:
+				// Get word count.
+				wordCnt=std::stoi(buf);
+				state++;
+				row=1;
+				break;
+			case 3:
+				// Get words.
+				newWords.push_back(buf);
+				if (row++==wordCnt) {
+					row=0, col=0;
+					state++;
+				}
+				break;
+			case 4:
+				// Get array data.
+				if (col==0)
+					newArray.push_back(std::vector<std::uint32_t>());
+				newArray[row].push_back(std::stoi(buf));
+				col++;
+				if (col==wordCnt) {
+					col=0;
+					row++;
+					if (row==wordCnt)
+						state++;
+				}
+				break;
+			default:
+				// Too many lines.
+				std::string m="Error in Quoter::readData: ";
+				m+="Save file '";
+				m+=filename;
+				m+="' is corrupt: Too many lines";
+				throw QuoterError(m);
 			}
 		}
-	} catch(std::ifstream::failure& e) {
+
+		if (state<=4) {
+			// Too few lines.
+			std::string m="Error in Quoter::readData: ";
+			m+="Save file '";
+			m+=filename;
+			m+="' is corrupt: Too few lines";
+			throw QuoterError(m);
+		}
+        } catch(const std::logic_error& e) {
+	        // Errors thrown by std::stoi.
 		std::string m="Error in Quoter::readData: ";
 		m+="Save file '";
 		m+=filename;
-		m+="' is corrupt";
+		m+="' is corrupt: ";
+		m+=e.what();
 		throw QuoterError(m);
 	}
 
 	bigram_words=newWords;
 	bigram_array=newArray;
 	bigram_rowSums=std::vector<std::uint32_t>(wordCnt, 0);
-	std::uint64_t row, col;
 	for (row=0;row<wordCnt;row++) {
 		for (col=0;col<wordCnt;col++)
 			bigram_rowSums[row]+=bigram_array[row][col];
