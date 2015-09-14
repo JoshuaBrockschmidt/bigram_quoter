@@ -1,8 +1,6 @@
 /* TODO
  *  - Seperate filtering from feed_stream.o
  *  - Add compatibility for []'s, ()'s, "'s and 's that surround text.
- *  - Add possibility for multiple types of punctuation.
- *  - Add saving and loading.
  */
 
 #include <fstream>
