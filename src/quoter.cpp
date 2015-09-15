@@ -245,8 +245,7 @@ void Quoter::writeData(std::string filename) {
 	out << save_format.major << ' ' << save_format.minor << '\n';
 
 	// Write word count.
-	std::uint64_t wordCnt=bigram_array.size();
-	out << wordCnt << '\n';
+	out << bigram_array.size() << '\n';
 
 	// Write words.
 	std::vector<std::string>::iterator word_it;
