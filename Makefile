@@ -21,5 +21,8 @@ all: $(NAME)
 $(NAME): $(OBJS)
 	$(CC) $(CPPFLAGS) $(OBJS) -o $(NAME)
 
+debug: CPPFLAGS += -g
+debug: all
+
 clean:
 	$(RM) $(NAME) $(OBJS)
