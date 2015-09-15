@@ -275,56 +275,7 @@ void Quoter::readData(std::string filename) {
 	std::vector<std::string> newWords;
 
 	try {
-		std::string buf;
-		int state=0;
-		while (std::getline(in, buf)) {
-			switch(state) {
-			case 0:
-				checkVersion(readVersion(buf));
-				state++;
-				break;
-			case 1:
-				// Get word count.
-				wordCnt=std::stoi(buf);
-				state++;
-				row=1;
-				break;
-			case 2:
-				// Get words.
-				newWords.push_back(buf);
-				if (row++==wordCnt) {
-					row=0, col=0;
-					state++;
-				}
-				break;
-			case 3:
-				// Get array data.
-				if (col==0)
-					newArray.push_back(std::vector<std::uint32_t>());
-				newArray[row].push_back(std::stoi(buf));
-				col++;
-				if (col==wordCnt) {
-					col=0;
-					row++;
-					if (row==wordCnt)
-						state++;
-				}
-				break;
-			default:
-				// Too many lines, but that's okay.
-				// Let's just ignore it like it didn't happen.
-				break;
-			}
-		}
-
-		if (state<=3) {
-			// Too few lines.
-			std::string m="Error in Quoter::readData: ";
-			m+="Save file '";
-			m+=filename;
-			m+="' is corrupt: Too few lines";
-			throw QuoterError(m);
-		}
+		Quoter::parseData(&in, &wordCnt, &newArray, &newWords);
         } catch(const std::logic_error& e) {
 	        // Errors thrown by std::stoi.
 		std::string m="Error in Quoter::readData: ";
@@ -332,6 +283,14 @@ void Quoter::readData(std::string filename) {
 		m+=filename;
 		m+="' is corrupt: ";
 		m+=e.what();
+		throw QuoterError(m);
+	} catch(const QuoterError& e) {
+		// Too few lines
+		std::string m="Error in Quoter::readData: ";
+		m+="Save file '";
+		m+=filename;
+		m+="' is corrupt: Too few lines";
+		/* Re-throw exception with proper error */
 		throw QuoterError(m);
 	}
 
@@ -382,6 +341,57 @@ Quoter::save_format_version Quoter::readVersion(std::string buf) {
 		.major = maj,
 		.minor = min,
 	};
+}
+
+void Quoter::parseData(std::ifstream *in, std::uint64_t *count,
+	       std::vector<std::vector<std::uint32_t>> *vecs,
+	       std::vector<std::string> *words) {
+	std::uint64_t row, col;
+	std::string buf;
+	int state=0;
+	while (std::getline(*in, buf)) {
+		switch(state) {
+		case 0:
+			checkVersion(readVersion(buf));
+			state++;
+			break;
+		case 1:
+			// Get word count.
+			*count=std::stoi(buf);
+			state++;
+			row=1;
+			break;
+		case 2:
+			// Get words.
+			(*words).push_back(buf);
+			if (row++==*count) {
+				row=0, col=0;
+				state++;
+			}
+			break;
+		case 3:
+			// Get array data.
+			if (col==0)
+				(*vecs).push_back(std::vector<std::uint32_t>());
+			(*vecs)[row].push_back(std::stoi(buf));
+			col++;
+			if (col==*count) {
+				col=0;
+				row++;
+				if (row==*count)
+					state++;
+			}
+			break;
+		default:
+			// Too many lines, but that's okay.
+			// Let's just ignore it like it didn't happen.
+			break;
+		}
+	}
+
+	// Too few lines. Throw dummy back to parent, who has the filename.
+	if (state<=3)
+		throw QuoterError(std::string());
 }
 
 std::string Quoter::filterWord(std::string& word) {
