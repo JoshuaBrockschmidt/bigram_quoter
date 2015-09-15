@@ -79,9 +79,9 @@ private:
 
 	void checkVersion(struct save_format_version v);
 	struct save_format_version readVersion(std::string buf);
-	void parseData(std::ifstream *in, std::uint64_t *count,
-		       std::vector<std::vector<std::uint32_t>> *vecs,
-		       std::vector<std::string> *words);
+	void parseData(std::ifstream& in, std::uint64_t& count,
+		       std::vector<std::vector<std::uint32_t>>& vecs,
+		       std::vector<std::string>& words);
 	std::string filterWord(std::string& word);
 };
 

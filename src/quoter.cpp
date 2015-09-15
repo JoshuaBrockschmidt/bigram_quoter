@@ -275,7 +275,7 @@ void Quoter::readData(std::string filename) {
 	std::vector<std::string> newWords;
 
 	try {
-		Quoter::parseData(&in, &wordCnt, &newArray, &newWords);
+		Quoter::parseData(in, wordCnt, newArray, newWords);
         } catch(const std::logic_error& e) {
 	        // Errors thrown by std::stoi.
 		std::string m="Error in Quoter::readData: ";
@@ -343,13 +343,13 @@ Quoter::save_format_version Quoter::readVersion(std::string buf) {
 	};
 }
 
-void Quoter::parseData(std::ifstream *in, std::uint64_t *count,
-	       std::vector<std::vector<std::uint32_t>> *vecs,
-	       std::vector<std::string> *words) {
+void Quoter::parseData(std::ifstream& in, std::uint64_t& count,
+	       std::vector<std::vector<std::uint32_t>>& vecs,
+	       std::vector<std::string>& words) {
 	std::uint64_t row, col;
 	std::string buf;
 	int state=0;
-	while (std::getline(*in, buf)) {
+	while (std::getline(in, buf)) {
 		switch(state) {
 		case 0:
 			checkVersion(readVersion(buf));
@@ -357,14 +357,14 @@ void Quoter::parseData(std::ifstream *in, std::uint64_t *count,
 			break;
 		case 1:
 			// Get word count.
-			*count=std::stoi(buf);
+			count=std::stoi(buf);
 			state++;
 			row=1;
 			break;
 		case 2:
 			// Get words.
-			(*words).push_back(buf);
-			if (row++==*count) {
+			words.push_back(buf);
+			if (row++==count) {
 				row=0, col=0;
 				state++;
 			}
@@ -372,13 +372,13 @@ void Quoter::parseData(std::ifstream *in, std::uint64_t *count,
 		case 3:
 			// Get array data.
 			if (col==0)
-				(*vecs).push_back(std::vector<std::uint32_t>());
-			(*vecs)[row].push_back(std::stoi(buf));
+				vecs.push_back(std::vector<std::uint32_t>());
+			vecs[row].push_back(std::stoi(buf));
 			col++;
-			if (col==*count) {
+			if (col==count) {
 				col=0;
 				row++;
-				if (row==*count)
+				if (row==count)
 					state++;
 			}
 			break;
