@@ -69,7 +69,7 @@ private:
 
 	const struct save_format_version save_format = {
 		.major = 2,
-		.minor = 0,
+		.minor = 1,
 	};
 
 	std::default_random_engine randGen;
