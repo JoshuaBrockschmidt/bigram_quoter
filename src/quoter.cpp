@@ -256,10 +256,8 @@ void Quoter::writeData(std::string filename) {
 	// Write array data.
 	std::vector<std::vector<std::uint32_t>>::iterator row_it;
 	std::vector<std::uint32_t>::iterator col_it;
-	for (row_it=bigram_array.begin();
-	     row_it!=bigram_array.end(); ++row_it)
-		for (col_it=row_it->begin();
-		     col_it!=row_it->end(); ++col_it)
+	for (row_it=bigram_array.begin(); row_it!=bigram_array.end(); ++row_it)
+		for (col_it=row_it->begin(); col_it!=row_it->end(); ++col_it)
 			out << *col_it << '\n';
 }
 
