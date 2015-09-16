@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <exception>
 #include <iostream>
+#include <fstream>
 #include <random>
 #include <string>
 #include <vector>
@@ -61,13 +62,26 @@ public:
 	 */
 	void emitArray();
 private:
-	const std::int16_t SAVEFORMAT_MAJOR=2;
-	const std::int16_t SAVEFORMAT_MINOR=0;
+	struct save_format_version {
+		std::int16_t major;
+		std::int16_t minor;
+	};
+
+	const struct save_format_version save_format = {
+		.major = 2,
+		.minor = 1,
+	};
+
 	std::default_random_engine randGen;
 	std::vector<std::vector<std::uint32_t>> bigram_array;
 	std::vector<std::uint32_t> bigram_rowSums;
 	std::vector<std::string> bigram_words;
 
+	void checkVersion(struct save_format_version v);
+	struct save_format_version readVersion(std::string buf);
+	void parseData(std::ifstream& in, std::uint64_t& count,
+		       std::vector<std::vector<std::uint32_t>>& vecs,
+		       std::vector<std::string>& words);
 	std::string filterWord(std::string& word);
 };
 

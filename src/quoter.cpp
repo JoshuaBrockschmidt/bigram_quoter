@@ -242,27 +242,23 @@ void Quoter::writeData(std::string filename) {
 	}
 
 	// Write major and minor version.
-	out << SAVEFORMAT_MAJOR;
-	out << '\n' << SAVEFORMAT_MINOR;
+	out << save_format.major << ' ' << save_format.minor << '\n';
 
 	// Write word count.
-	std::uint64_t wordCnt=bigram_array.size();
-	out << '\n' << wordCnt;
+	out << bigram_array.size() << '\n';
 
 	// Write words.
 	std::vector<std::string>::iterator word_it;
 	for (word_it=bigram_words.begin();
 	     word_it!=bigram_words.end(); ++word_it)
-		out << '\n' << *word_it;
+		out << *word_it << '\n';
 
 	// Write array data.
 	std::vector<std::vector<std::uint32_t>>::iterator row_it;
 	std::vector<std::uint32_t>::iterator col_it;
-	for (row_it=bigram_array.begin();
-	     row_it!=bigram_array.end(); ++row_it)
-		for (col_it=row_it->begin();
-		     col_it!=row_it->end(); ++col_it)
-			out << '\n' << *col_it;
+	for (row_it=bigram_array.begin(); row_it!=bigram_array.end(); ++row_it)
+		for (col_it=row_it->begin(); col_it!=row_it->end(); ++col_it)
+			out << *col_it << '\n';
 }
 
 void Quoter::readData(std::string filename) {
@@ -279,78 +275,7 @@ void Quoter::readData(std::string filename) {
 	std::vector<std::string> newWords;
 
 	try {
-		std::string buf;
-		std::uint16_t major, minor;
-		int state=0;
-		while (std::getline(in, buf)) {
-			switch(state) {
-			case 0:
-				// Get major version number.
-				major=std::stoi(buf);
-				state++;
-				break;
-			case 1:
-				// Get minor version number.
-				minor=std::stoi(buf);
-				if (major!=SAVEFORMAT_MAJOR || minor!=SAVEFORMAT_MINOR) {
-					std::string m="Error in Quoter::readData: "
-						"File format version is ";
-					m+=std::to_string(major);
-					m+=".";
-					m+=std::to_string(minor);
-					m+="; it should be ";
-					m+=std::to_string(SAVEFORMAT_MAJOR);
-					m+=".";
-					m+=std::to_string(SAVEFORMAT_MINOR);
-					throw QuoterError(m);
-				}
-				state++;
-				break;
-			case 2:
-				// Get word count.
-				wordCnt=std::stoi(buf);
-				state++;
-				row=1;
-				break;
-			case 3:
-				// Get words.
-				newWords.push_back(buf);
-				if (row++==wordCnt) {
-					row=0, col=0;
-					state++;
-				}
-				break;
-			case 4:
-				// Get array data.
-				if (col==0)
-					newArray.push_back(std::vector<std::uint32_t>());
-				newArray[row].push_back(std::stoi(buf));
-				col++;
-				if (col==wordCnt) {
-					col=0;
-					row++;
-					if (row==wordCnt)
-						state++;
-				}
-				break;
-			default:
-				// Too many lines.
-				std::string m="Error in Quoter::readData: ";
-				m+="Save file '";
-				m+=filename;
-				m+="' is corrupt: Too many lines";
-				throw QuoterError(m);
-			}
-		}
-
-		if (state<=4) {
-			// Too few lines.
-			std::string m="Error in Quoter::readData: ";
-			m+="Save file '";
-			m+=filename;
-			m+="' is corrupt: Too few lines";
-			throw QuoterError(m);
-		}
+		Quoter::parseData(in, wordCnt, newArray, newWords);
         } catch(const std::logic_error& e) {
 	        // Errors thrown by std::stoi.
 		std::string m="Error in Quoter::readData: ";
@@ -358,6 +283,14 @@ void Quoter::readData(std::string filename) {
 		m+=filename;
 		m+="' is corrupt: ";
 		m+=e.what();
+		throw QuoterError(m);
+	} catch(const QuoterError& e) {
+		// Too few lines
+		std::string m="Error in Quoter::readData: ";
+		m+="Save file '";
+		m+=filename;
+		m+="' is corrupt: Too few lines";
+		/* Re-throw exception with proper error */
 		throw QuoterError(m);
 	}
 
@@ -379,6 +312,86 @@ void Quoter::emitArray() {
 		}
 		std::cout << std::endl;
 	}
+}
+
+void Quoter::checkVersion(Quoter::save_format_version v) {
+	if (v.major != save_format.major || v.minor != save_format.minor) {
+		std::string m="Error in Quoter::readData: "
+			"File format version is ";
+		m+=std::to_string(v.major);
+		m+=".";
+		m+=std::to_string(v.minor);
+		m+="; it should be ";
+		m+=std::to_string(save_format.major);
+		m+=".";
+		m+=std::to_string(save_format.minor);
+		throw QuoterError(m);
+	}
+}
+
+Quoter::save_format_version Quoter::readVersion(std::string buf) {
+	size_t substr_pos = 0;
+	std::int16_t maj, min;
+
+	maj = std::stoi(buf, &substr_pos);
+	/* substr_pos starts at separating space, so skip it */
+	min = std::stoi(buf.substr(substr_pos + 1));
+
+	return Quoter::save_format_version {
+		.major = maj,
+		.minor = min,
+	};
+}
+
+void Quoter::parseData(std::ifstream& in, std::uint64_t& count,
+	       std::vector<std::vector<std::uint32_t>>& vecs,
+	       std::vector<std::string>& words) {
+	std::uint64_t row, col;
+	std::string buf;
+	int state=0;
+	while (std::getline(in, buf)) {
+		switch(state) {
+		case 0:
+			checkVersion(readVersion(buf));
+			state++;
+			break;
+		case 1:
+			// Get word count.
+			count=std::stoi(buf);
+			state++;
+			row=1;
+			break;
+		case 2:
+			// Get words.
+			words.push_back(buf);
+			if (row++==count) {
+				row=0, col=0;
+				state++;
+			}
+			break;
+		case 3:
+			// Get array data.
+			if (col==0)
+				vecs.push_back(std::vector<std::uint32_t>());
+			vecs[row].push_back(std::stoi(buf));
+			col++;
+			if (col==count) {
+				col=0;
+				row++;
+				if (row==count)
+					state++;
+			}
+			break;
+		default:
+			// Too many lines, but that's okay.
+			// Let's just ignore it like it didn't happen.
+			break;
+		}
+	}
+
+	// Too few lines. Throw dummy back to parent, who has the filename.
+	if (state<=3)
+		throw QuoterError(std::string());
 }
 
 std::string Quoter::filterWord(std::string& word) {
