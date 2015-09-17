@@ -1,5 +1,5 @@
 /* TODO
- *  - Seperate filtering from feed_stream.o
+ *  - Seperate filtering from feed_stream.
  *  - Add compatibility for []'s, ()'s, "'s and 's that surround text.
  */
 
