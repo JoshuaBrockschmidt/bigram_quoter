@@ -7,35 +7,6 @@
 #include <sstream>
 #include "quoter.hpp"
 
-enum struct Markers: std::uint32_t {
-	START,
-	PERIOD,
-	EXCLAIM,
-	QUESTION,
-	NUM_ITEMS
-};
-enum struct ParserItemTypes: std::uint32_t {
-	MARKER,
-        WORD
-};
-struct ParserItem {
-        ParserItemTypes type;
-};
-struct ParserItem_marker: ParserItem {
-	Markers marker;
-	ParserItem_marker(Markers m) {
-		type=ParserItemTypes::MARKER;
-		marker=m;
-	}
-};
-struct ParserItem_word: ParserItem {
-	std::string word;
-	ParserItem_word(std::string w) {
-		type=ParserItemTypes::WORD;
-		word=w;
-	}
-};
-
 QuoterError::QuoterError(std::string m): msg(m) {}
 const char* QuoterError::what() const throw() {
 	return msg.c_str();

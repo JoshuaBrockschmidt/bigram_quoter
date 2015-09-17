@@ -62,6 +62,40 @@ public:
 	 */
 	void emitArray();
 private:
+	enum struct Markers: std::uint32_t {
+		START,
+		PERIOD,
+		EXCLAIM,
+		QUESTION,
+		NUM_ITEMS
+	};
+
+	enum struct ParserItemTypes: std::uint32_t {
+		MARKER,
+		WORD
+	};
+
+	struct ParserItem {
+		ParserItemTypes type;
+	};
+
+	struct ParserItem_marker: ParserItem {
+		Markers marker;
+		ParserItem_marker(Markers m) {
+			type=ParserItemTypes::MARKER;
+			marker=m;
+		}
+	};
+
+	struct ParserItem_word: ParserItem {
+		std::string word;
+		ParserItem_word(std::string w) {
+			type=ParserItemTypes::WORD;
+			word=w;
+		}
+	};
+
+
 	struct save_format_version {
 		std::int16_t major;
 		std::int16_t minor;
