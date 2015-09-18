@@ -96,45 +96,41 @@ void Quoter::feed_stream(std::istream& in) {
 	for (std::vector<ParserItem *>::iterator token =
 	     parserItems.begin() + 1; token != parserItems.end(); ++token) {
 		switch ((*token)->type) {
-		case ParserItemTypes::MARKER:
-			{
-				ParserItem_marker& mark_pi =
-				    *((ParserItem_marker *)(*token));
-				row = (unsigned int)mark_pi.marker;
-				break;
+		case ParserItemTypes::MARKER: {
+			ParserItem_marker& mark_pi =
+				*((ParserItem_marker *)(*token));
+			row = (unsigned int)mark_pi.marker;
+			break;
+		} case ParserItemTypes::WORD: {
+			ParserItem_word& word_pi =
+				*((ParserItem_word *)(*token));
+			// Find row index of word in bigram array.
+			row = 0;
+			std::vector<std::string>::iterator w;
+			for (w = bigram_words.begin();
+			     w != bigram_words.end(); ++w) {
+				if (word_pi.word == *w)
+					break;
+				row++;
 			}
-		case ParserItemTypes::WORD:
-			{
-				ParserItem_word& word_pi =
-				    *((ParserItem_word *)(*token));
-				// Find row index of word in bigram array.
-				row = 0;
-				std::vector<std::string>::iterator w;
-				for (w = bigram_words.begin();
-				     w != bigram_words.end(); ++w) {
-					if (word_pi.word == *w)
-						break;
-					row++;
-				}
-				// If word does not yet exist in bigram array,
-				// add it.
-				if (row >= bigram_words.size()) {
-					bigram_words.push_back(word_pi.word);
+			// If word does not yet exist in bigram array,
+			// add it.
+			if (row >= bigram_words.size()) {
+				bigram_words.push_back(word_pi.word);
 
-					// Extend all rows.
-					std::vector<std::vector<std::uint32_t>>::iterator r;
-					for (r = bigram_array.begin();
-					     r != bigram_array.end(); ++r)
-						r->push_back(0);
+				// Extend all rows.
+				std::vector<std::vector<std::uint32_t>>::iterator r;
+				for (r = bigram_array.begin();
+				     r != bigram_array.end(); ++r)
+					r->push_back(0);
 
-					// Add rows.
-					std::vector<std::uint32_t> newRow(bigram_words.size(), 0);
-					bigram_array.push_back(newRow);
-					bigram_rowSums.push_back(0);
-				}
-				break;
+				// Add rows.
+				std::vector<std::uint32_t> newRow(bigram_words.size(), 0);
+				bigram_array.push_back(newRow);
+				bigram_rowSums.push_back(0);
 			}
-		default:
+			break;
+		} default:
 			std::cerr << "Error in Quoter::feed_stream: "
 				  << "Unexpected error in second parsing run."
 				  << std::endl;
