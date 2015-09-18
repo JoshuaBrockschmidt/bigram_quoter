@@ -1,19 +1,8 @@
-#include <unistd.h>
+#include "argparser.hpp"
 #include "quoter.hpp"
 
-const char* savefile="save.dat";
-
-int main() {
-	Quoter quoterObj;
-	if (access(savefile, F_OK)!=-1) {
-		std::cout << "Loading data..." << std::endl;
-		quoterObj.readData(std::string(savefile));
-	} else {
-		quoterObj.feed_file("test.txt");
-		std::cout << "Saving data..." << std::endl;
-		quoterObj.writeData(std::string(savefile));
-	}
-	std::cout << quoterObj.buildSentence() << std::endl;
+int main(int argc, char** argv) {
+	ArgParser::parseArgs(argc, argv);
 
 	return 0;
 }
