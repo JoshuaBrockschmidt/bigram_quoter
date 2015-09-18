@@ -21,6 +21,16 @@ all: $(NAME)
 $(NAME): $(OBJS)
 	$(CC) $(CPPFLAGS) $(OBJS) -o $(NAME)
 
+src/argparser.o: include/showhelp.h
+
+include/showhelp.h: help
+# Use sed to transform plaintext helpfile
+# into escaped version for printing.
+# Thanks to esr for the trick.
+	sed <help >include/showhelp.h \
+		-e 's/\\/\\\\/g' -e 's/"/\\"/g' \
+		-e 's/.*/std::cerr << "&" << std::endl;/g'
+
 debug: CPPFLAGS += -g
 debug: all
 

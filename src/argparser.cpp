@@ -17,8 +17,11 @@ const char* opts_string="stn:o:l:m:f:b";
 
 void ArgParser::parseArgs(int argc, char** argv) {
 	if (argc == 1) {
-		std::cerr << argv[0] << ": no arguments given" << std::endl;
-		//TODO: Print out help.
+		std::cerr << argv[0] << ": no arguments given\n" << std::endl;
+		#include "showhelp.h"
+		std::cerr <<
+			"\nSee https://github.com/JoshuaBrockschmidt/bigram_quoter"
+			"\n" << std::endl;
 	        exit(1);
 	}
 	std::vector<std::pair<Quoter, std::string>> stash;

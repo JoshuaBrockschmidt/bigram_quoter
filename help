@@ -1,0 +1,16 @@
+-s, --strict
+	Exit on non-fatal errors.
+-t, --tolerant
+	Only exit on fatal commands. Enabled by default.
+-n, --new [FILE]
+	Creates a new bigram quoter and adds it to the stash.
+-o, --overwrite [FILE]
+	Overwrites an existing bigram quoter with a new bigram quoter.
+-l, --load [FILE]
+	Load data for a bigram quoter from save files and adds the to the stash.
+-m, --merge [FILE]
+	Merge stashed bigram quoters into a new bigram quoter.
+-f, --feed [FILE]
+	Feeds a text file into the stashed bigram quoters.
+-b, --build
+	Constructs a single sentences for each stashed bigram quoter.
