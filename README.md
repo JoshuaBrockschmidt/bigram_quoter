@@ -1,5 +1,5 @@
 # bigram_quoter
-An artificial intelligence that generates fake quotes using a bigram model and example text.
+An artificial intelligence program that generates fake quotes using a bigram model and example text.
 
 ## Commands
 Command-line interactions consist of stashing new or loaded bigram quoters and applying operations to them. This may be done multiple times in any order. But a quoter must be stashed before operations will do anything. Stashed bigram quoters will remain in the stash until all given arguments have been parsed. After all arguments have been parsed, all stashed bigram quoters will be written to their respective save files.
@@ -9,7 +9,7 @@ Command-line interactions consist of stashing new or loaded bigram quoters and a
 * **-t, --tolerant**
   Switch to tolerant mode for all proceeding commands. Only exit on fatal commands. Enabled by default.
 
-* **-n, --new [FILES]**
+* **-n, --new [FILE]**
   Creates a new bigram quoter and adds it to the stash.
 
 * **-o, --overwrite [FILE]**
