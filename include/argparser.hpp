@@ -19,23 +19,23 @@ namespace ArgParser {
 		{0, 0, 0, 0}
 	};
 
-	void parseArgs(int argc, char** argv);
-	void option_new(int argc, char** argv,
+	void parseArgs(int argc, char **argv);
+	void option_new(int argc, char **argv,
 			std::vector<std::pair<Quoter, std::string>>& stash,
 		        bool strictMode, bool& strictMode_exit);
-	void option_load(int argc, char** argv,
+	void option_load(int argc, char **argv,
 			 std::vector<std::pair<Quoter, std::string>>& stash,
 			 bool strictMode, bool& strictMode_exit);
-	void option_overwrite(int argc, char** argv,
+	void option_overwrite(int argc, char **argv,
 			 std::vector<std::pair<Quoter, std::string>>& stash,
 			 bool strictMode, bool& strictMode_exit);
-	void option_merge(int argc, char** argv,
+	void option_merge(int argc, char **argv,
 			  std::vector<std::pair<Quoter, std::string>>& stash,
 			  bool strictMode, bool& strictMode_exit);
-	void option_feed(int argc, char** argv,
+	void option_feed(int argc, char **argv,
 			 std::vector<std::pair<Quoter, std::string>>& stash,
 			 bool strictMode, bool& strictMode_exit);
-	void option_build(int argc, char** argv,
+	void option_build(int argc, char **argv,
 			  std::vector<std::pair<Quoter, std::string>>& stash,
 			  bool strictMode, bool& strictMode_exit);
         bool filenameInStash(std::vector<std::pair<Quoter, std::string>>& stash,

@@ -1,4 +1,5 @@
-/* TODO
+/*
+ * TODO
  *  - Check if bigram quoter has been fed before building a sentence.
  *  - Enforce a file extension (maybe .bq). If the file extension is not
  *    included with a savefile string, it will be appended automatically.
@@ -19,9 +20,9 @@
  */
 #define UNUSED(x) ((void)(x))
 
-const char* opts_string="stn:o:l:m:f:b";
+const char *opts_string = "stn:o:l:m:f:b";
 
-void ArgParser::parseArgs(int argc, char** argv) {
+void ArgParser::parseArgs(int argc, char **argv) {
 	if (argc == 1) {
 		std::cerr << argv[0] << ": no arguments given\n" << std::endl;
 		#include "showhelp.h"
@@ -31,17 +32,17 @@ void ArgParser::parseArgs(int argc, char** argv) {
 	        exit(1);
 	}
 	std::vector<std::pair<Quoter, std::string>> stash;
-	bool strictMode=false, strictMode_exit=false;
-	int o, argi=1;
-	while ((o=getopt_long(argc, argv, opts_string, opts_long, &argi)) != -1) {
+	bool strictMode = false, strictMode_exit = false;
+	int o, argi = 1;
+	while ((o = getopt_long(argc, argv, opts_string, opts_long, &argi)) != -1) {
 		switch(o) {
 		case 's':
 			// Switch to strict mode.
-			strictMode=true;
+			strictMode = true;
 			break;
 		case 't':
 			// Switch to tolerant mode.
-			strictMode=false;
+			strictMode = false;
 			break;
 		case 'n':
 			// Create and save a new bigram quoter
@@ -92,11 +93,11 @@ void ArgParser::parseArgs(int argc, char** argv) {
 
 	// Write stashed bigram quoters to their respective save files.
 	std::vector<std::pair<Quoter, std::string>>::iterator s_it;
-        for (s_it=stash.begin(); s_it!=stash.end(); ++s_it)
+        for (s_it = stash.begin(); s_it != stash.end(); ++s_it)
 		s_it->first.writeData(s_it->second);
 }
 
-void ArgParser::option_new(int argc, char** argv,
+void ArgParser::option_new(int argc, char **argv,
 			   std::vector<std::pair<Quoter, std::string>>& stash,
 			   bool strictMode, bool& strictMode_exit) {
 	UNUSED(argc);
@@ -115,7 +116,7 @@ void ArgParser::option_new(int argc, char** argv,
 	stash.push_back(newPair);
 }
 
-void ArgParser::option_overwrite(int argc, char** argv,
+void ArgParser::option_overwrite(int argc, char **argv,
 				 std::vector<std::pair<Quoter, std::string>>& stash,
 				 bool strictMode, bool& strictMode_exit) {
 	UNUSED(argc);
@@ -134,7 +135,7 @@ void ArgParser::option_overwrite(int argc, char** argv,
 	stash.push_back(newPair);
 }
 
-void ArgParser::option_load(int argc, char** argv,
+void ArgParser::option_load(int argc, char **argv,
 			    std::vector<std::pair<Quoter, std::string>>& stash,
 			    bool strictMode, bool& strictMode_exit) {
 	UNUSED(argc);
@@ -174,7 +175,7 @@ void ArgParser::option_load(int argc, char** argv,
 	}
 }
 
-void ArgParser::option_merge(int argc, char** argv,
+void ArgParser::option_merge(int argc, char **argv,
 			     std::vector<std::pair<Quoter, std::string>>& stash,
 			     bool strictMode, bool& strictMode_exit) {
 	UNUSED(argc);
@@ -193,7 +194,7 @@ void ArgParser::option_merge(int argc, char** argv,
 	return;
 }
 
-void ArgParser::option_feed(int argc, char** argv,
+void ArgParser::option_feed(int argc, char **argv,
 			    std::vector<std::pair<Quoter, std::string>>& stash,
 			    bool strictMode, bool& strictMode_exit) {
 	UNUSED(argc);
@@ -209,7 +210,7 @@ void ArgParser::option_feed(int argc, char** argv,
 		return;
 	}
 	std::vector<std::pair<Quoter, std::string>>::iterator s_it;
-	for (s_it=stash.begin(); s_it!=stash.end(); ++s_it) {
+	for (s_it = stash.begin(); s_it != stash.end(); ++s_it) {
 		try {
 			s_it->first.feed_file(filename);
 		} catch (QuoterError& e) {
@@ -222,7 +223,7 @@ void ArgParser::option_feed(int argc, char** argv,
 	}
 }
 
-void ArgParser::option_build(int argc, char** argv,
+void ArgParser::option_build(int argc, char **argv,
 			     std::vector<std::pair<Quoter, std::string>>& stash,
 			     bool strictMode, bool& strictMode_exit) {
 	UNUSED(argc);
@@ -235,14 +236,14 @@ void ArgParser::option_build(int argc, char** argv,
 		return;
 	}
 	std::vector<std::pair<Quoter, std::string>>::iterator s_it;
-	for (s_it=stash.begin(); s_it!=stash.end(); ++s_it)
+	for (s_it = stash.begin(); s_it != stash.end(); ++s_it)
 		std::cout << s_it->first.buildSentence() << std::endl;
 }
 
 bool ArgParser::filenameInStash(std::vector<std::pair<Quoter, std::string>>& stash,
 				const std::string& filename) {
 	std::vector<std::pair<Quoter, std::string>>::iterator s_it;
-	for (s_it=stash.begin(); s_it!=stash.end(); ++s_it)
+	for (s_it = stash.begin(); s_it != stash.end(); ++s_it)
 		if (s_it->second == filename)
 			return true;
 	return false;
