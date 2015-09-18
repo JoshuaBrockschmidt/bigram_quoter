@@ -13,6 +13,12 @@
 #include <unistd.h>
 #include "argparser.hpp"
 
+/*
+ * Define a temporary macro to mark passed arguments as unused.
+ * TODO: use them soon or stop passing them.
+ */
+#define UNUSED(x) ((void)(x))
+
 const char* opts_string="stn:o:l:m:f:b";
 
 void ArgParser::parseArgs(int argc, char** argv) {
@@ -93,6 +99,7 @@ void ArgParser::parseArgs(int argc, char** argv) {
 void ArgParser::option_new(int argc, char** argv,
 			   std::vector<std::pair<Quoter, std::string>>& stash,
 			   bool strictMode, bool& strictMode_exit) {
+	UNUSED(argc);
 	std::string filename(optarg);
 	if (access(optarg, F_OK) != -1 || filenameInStash(stash, filename)) {
 		std::cerr << argv[0]
@@ -111,6 +118,7 @@ void ArgParser::option_new(int argc, char** argv,
 void ArgParser::option_overwrite(int argc, char** argv,
 				 std::vector<std::pair<Quoter, std::string>>& stash,
 				 bool strictMode, bool& strictMode_exit) {
+	UNUSED(argc);
 	std::string filename(optarg);
 	if (access(optarg, F_OK) == -1 || filenameInStash(stash, filename)) {
 		std::cerr << argv[0]
@@ -129,6 +137,7 @@ void ArgParser::option_overwrite(int argc, char** argv,
 void ArgParser::option_load(int argc, char** argv,
 			    std::vector<std::pair<Quoter, std::string>>& stash,
 			    bool strictMode, bool& strictMode_exit) {
+	UNUSED(argc);
 	std::string filename(optarg);
 	if (filenameInStash(stash, filename)) {
 		std::cerr << argv[0]
@@ -168,6 +177,7 @@ void ArgParser::option_load(int argc, char** argv,
 void ArgParser::option_merge(int argc, char** argv,
 			     std::vector<std::pair<Quoter, std::string>>& stash,
 			     bool strictMode, bool& strictMode_exit) {
+	UNUSED(argc);
 	std::string filename(optarg);
 	if (access(optarg, F_OK) != -1 || filenameInStash(stash, filename)) {
 		std::cerr << argv[0]
@@ -186,6 +196,7 @@ void ArgParser::option_merge(int argc, char** argv,
 void ArgParser::option_feed(int argc, char** argv,
 			    std::vector<std::pair<Quoter, std::string>>& stash,
 			    bool strictMode, bool& strictMode_exit) {
+	UNUSED(argc);
 	std::string filename(optarg);
 	if (access(optarg, F_OK) == -1) {
 		std::cerr << argv[0]
@@ -214,6 +225,7 @@ void ArgParser::option_feed(int argc, char** argv,
 void ArgParser::option_build(int argc, char** argv,
 			     std::vector<std::pair<Quoter, std::string>>& stash,
 			     bool strictMode, bool& strictMode_exit) {
+	UNUSED(argc);
 	if (stash.empty()) {
 		std::cerr << argv[0]
 			  << ": cannot build sentences; stash is empty"
