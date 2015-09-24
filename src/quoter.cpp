@@ -5,6 +5,7 @@
  *  - Add merge function.
  */
 
+#include <stdexcept>
 #include <fstream>
 #include <sstream>
 #include "quoter.hpp"
@@ -246,7 +247,7 @@ void Quoter::readData(std::string filename) {
 
 	try {
 		Quoter::parseData(in, wordCnt, newArray, newWords);
-	} catch(const std::logic_error& e) {
+	} catch (const std::logic_error& e) {
 		// Errors thrown by std::stoi.
 		std::string m = "Error in Quoter::readData: ";
 		m += "Save file '";
@@ -254,7 +255,7 @@ void Quoter::readData(std::string filename) {
 		m += "' is corrupt: ";
 		m += e.what();
 		throw QuoterError(m);
-	} catch(const QuoterError& e) {
+	} catch (const QuoterError& e) {
 		// Too few lines
 		std::string m = "Error in Quoter::readData: ";
 		m += "Save file '";
